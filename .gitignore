@@ -1,0 +1,36 @@
+# Build
+build*/
+dist/
+cmake-build-*/
+
+# Compiled
+*.exe
+*.dll
+*.lib
+*.a
+*.obj
+*.o
+*.so
+
+# Qt
+*.pro.user
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+*_autogen/
+*.moc
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Runtime
+*.db
+stego_temp_output.bmp
