@@ -129,7 +129,7 @@ private slots:
         QVERIFY(f.open(QIODevice::ReadWrite));
         QByteArray data = f.readAll();
         QVERIFY(data.size() > 100);
-        data[100] ^= 0x01; // flip one bit somewhere in pixel data
+        data[100] = data[100] ^ static_cast<char>(0x01);
         f.seek(0);
         f.write(data);
         f.close();

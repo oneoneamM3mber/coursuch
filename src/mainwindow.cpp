@@ -552,7 +552,11 @@ void MainWindow::onLoadMessageFromFile() {
         return;
     }
     QTextStream in(&f);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     in.setEncoding(QStringConverter::Utf8);
+#else
+    in.setCodec("UTF-8");
+#endif
 
     m_messageEdit->setPlainText(in.readAll());
     m_statusBar->showMessage("Сообщение загружено из: " + path);
@@ -686,7 +690,11 @@ void MainWindow::onSaveExtractedToFile() {
     QFile f(dst);
     if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
         QTextStream out(&f);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         out.setEncoding(QStringConverter::Utf8);
+#else
+        out.setCodec("UTF-8");
+#endif
 
         out << text;
     }
