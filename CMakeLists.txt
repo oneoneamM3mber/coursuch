@@ -10,11 +10,11 @@ set(CMAKE_AUTOUIC ON)
 # ── Find Qt (Qt6 first, fallback Qt5) ──
 find_package(Qt6 QUIET COMPONENTS Widgets Core Gui Sql)
 if(Qt6_FOUND)
-    set(QT_LIBS Qt6::Widgets Qt6::Core Qt6::Gui Qt6::Sql)
+    set(QT_PREFIX Qt6)
     message(STATUS "Using Qt6")
 else()
     find_package(Qt5 REQUIRED COMPONENTS Widgets Core Gui Sql)
-    set(QT_LIBS Qt5::Widgets Qt5::Core Qt5::Gui Qt5::Sql)
+    set(QT_PREFIX Qt5)
     message(STATUS "Using Qt5")
 endif()
 
@@ -26,7 +26,7 @@ add_library(steganolib STATIC
     include/database.h
 )
 target_include_directories(steganolib PUBLIC ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(steganolib PUBLIC Qt6::Core Qt6::Sql)
+target_link_libraries(steganolib PUBLIC ${QT_PREFIX}::Core ${QT_PREFIX}::Sql)
 
 # ── Application ──
 add_executable(StegoLab
@@ -34,7 +34,7 @@ add_executable(StegoLab
     src/mainwindow.cpp
     include/mainwindow.h
 )
-target_link_libraries(StegoLab PRIVATE steganolib Qt6::Widgets Qt6::Gui)
+target_link_libraries(StegoLab PRIVATE steganolib ${QT_PREFIX}::Widgets ${QT_PREFIX}::Gui)
 
 if(MINGW)
     target_link_options(StegoLab PRIVATE -mwindows)
@@ -48,17 +48,17 @@ endif()
 install(TARGETS StegoLab DESTINATION bin)
 
 # ── Tests ──
-find_package(Qt6 QUIET COMPONENTS Test)
-if(Qt6Test_FOUND)
+find_package(${QT_PREFIX} QUIET COMPONENTS Test)
+if(${QT_PREFIX}Test_FOUND)
     enable_testing()
     add_executable(StegoLab_tests
         tests/test_steganography.cpp
     )
     target_link_libraries(StegoLab_tests PRIVATE
-        steganolib Qt6::Test Qt6::Core Qt6::Gui
+        steganolib ${QT_PREFIX}::Test ${QT_PREFIX}::Core ${QT_PREFIX}::Gui
     )
     add_test(NAME StegoLabTests COMMAND StegoLab_tests)
-    message(STATUS "Tests enabled (Qt6Test found)")
+    message(STATUS "Tests enabled (${QT_PREFIX}Test found)")
 else()
-    message(WARNING "Qt6Test not found — tests disabled")
+    message(WARNING "${QT_PREFIX}Test not found — tests disabled")
 endif()
