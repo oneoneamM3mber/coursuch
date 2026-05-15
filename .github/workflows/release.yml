@@ -1,0 +1,105 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    name: Linux (Qt5)
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Qt5
+      run: sudo apt update && sudo apt install -y qtbase5-dev libqt5sql5-sqlite
+
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: cmake --build build --parallel $(nproc)
+
+    - name: Pack artifact
+      run: |
+        mkdir -p artifact
+        cp build/StegoLab artifact/
+        cp README.md artifact/
+        ldd build/StegoLab | grep Qt | awk '{print $3}' | xargs -I{} cp {} artifact/ 2>/dev/null || true
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: StegoLab-Linux
+        path: artifact/
+
+  build-windows:
+    name: Windows (MinGW + Qt6)
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Qt6
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: "6.7"
+        host: windows
+        target: desktop
+        arch: win64_mingw
+        modules: qtbase qt5compat
+
+    - name: Add MinGW to PATH
+      shell: bash
+      run: echo "C:/msys64/ucrt64/bin" >> "$GITHUB_PATH"
+
+    - name: Configure CMake
+      shell: bash
+      run: cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      shell: bash
+      run: cmake --build build --parallel $(nproc)
+
+    - name: Deploy Qt DLLs
+      shell: bash
+      run: windeployqt build/StegoLab.exe
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: StegoLab-Windows
+        path: build/StegoLab.exe*
+
+  create-release:
+    name: Create Release
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/download-artifact@v4
+
+    - name: Pack release assets
+      run: |
+        tar czf StegoLab-Linux.tar.gz -C StegoLab-Linux .
+        cd StegoLab-Windows && zip -r ../StegoLab-Windows.zip . && cd ..
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: StegoLab ${{ github.ref_name }}
+        body: |
+          Автоматическая сборка ${{ github.ref_name }}.
+
+          ### Что внутри
+          - **StegoLab-Linux.tar.gz** — портативная сборка для Linux (Qt5)
+          - **StegoLab-Windows.zip** — портативная сборка для Windows (Qt6 + MinGW)
+
+          > **Внимание:** Для Linux требуется установленный Qt5 (`qtbase5-dev`).
+          > Для Windows достаточно распаковать zip и запустить `StegoLab.exe`.
+        files: |
+          StegoLab-Linux.tar.gz
+          StegoLab-Windows.zip
